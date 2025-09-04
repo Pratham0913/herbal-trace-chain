@@ -44,6 +44,9 @@ const Index = () => {
     setAppState('entry');
   };
   const handleBack = () => setAppState('entry');
+  const handleUserUpdate = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
 
   return (
     <ThemeProvider>
@@ -71,7 +74,11 @@ const Index = () => {
         )}
         
         {appState === 'dashboard' && user && (
-          <Dashboard user={user} onLogout={handleLogout}>
+          <Dashboard 
+            user={user} 
+            onLogout={handleLogout}
+            onUserUpdate={handleUserUpdate}
+          >
             {renderPortal()}
           </Dashboard>
         )}

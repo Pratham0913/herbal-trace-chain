@@ -15,14 +15,16 @@ import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import { User as UserType } from '@/components/LoginSignup';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import ProfileSettings from '@/components/ProfileSettings';
 
 interface DashboardProps {
   user: UserType;
   children: React.ReactNode;
   onLogout: () => void;
+  onUserUpdate?: (updatedUser: UserType) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, children, onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, children, onLogout, onUserUpdate }) => {
   const { translate, currentLanguage, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
@@ -134,20 +136,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, children, onLogout }) => {
         {children}
       </main>
 
-      {/* Profile Settings Modal would go here */}
-      {showProfileSettings && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Profile Settings</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Profile settings would be implemented here.
-            </p>
-            <Button onClick={() => setShowProfileSettings(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Profile Settings */}
+      <ProfileSettings
+        user={user}
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
+        onLogout={onLogout}
+        onUserUpdate={onUserUpdate}
+      />
     </div>
   );
 };

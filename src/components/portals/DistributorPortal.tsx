@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrCode, Truck, Package, Clock, MapPin, Route } from 'lucide-react';
+import { QrCode, Truck, Package, Clock, MapPin, Route, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import QRScanner from '@/components/QRScanner';
 import { QRData } from '@/components/QRGenerator';
 import { User } from '@/components/LoginSignup';
 import { useToast } from '@/hooks/use-toast';
+import MetaMaskPayment from '@/components/MetaMaskPayment';
 
 interface DistributorPortalProps {
   user: User;
@@ -38,6 +39,12 @@ const DistributorPortal: React.FC<DistributorPortalProps> = ({ user }) => {
   const [scannedData, setScannedData] = useState<QRData | null>(null);
   const [selectedShipment, setSelectedShipment] = useState<string>('');
   const [newStatus, setNewStatus] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    recipientName: string;
+    amount: number;
+    description: string;
+  } | null>(null);
   const { toast } = useToast();
 
   const [shipments] = useState<Shipment[]>([
@@ -159,6 +166,30 @@ const DistributorPortal: React.FC<DistributorPortalProps> = ({ user }) => {
       month: 'short',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  };
+
+  const handlePaymentClick = (shipment: Shipment) => {
+    setPaymentDetails({
+      recipientName: `Aggregator - ${shipment.origin}`,
+      amount: shipment.totalQuantity * 0.2, // 0.2 MATIC per kg
+      description: `Payment for shipment ${shipment.id} (${shipment.totalQuantity} kg)`
+    });
+    setShowPayment(true);
+  };
+
+  const handlePaymentSuccess = (txHash: string) => {
+    toast({
+      title: "Payment Successful",
+      description: `Payment sent successfully. Transaction: ${txHash.slice(0, 10)}...`,
+    });
+  };
+
+  const handlePaymentFailure = (error: string) => {
+    toast({
+      title: "Payment Failed",
+      description: error,
+      variant: "destructive",
     });
   };
 
@@ -378,9 +409,19 @@ const DistributorPortal: React.FC<DistributorPortalProps> = ({ user }) => {
                     Track Route
                   </Button>
                   {shipment.status !== 'delivered' && (
-                    <Button size="sm" variant="outline">
-                      Update Location
-                    </Button>
+                    <>
+                      <Button size="sm" variant="outline">
+                        Update Location
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handlePaymentClick(shipment)}
+                        className="herbal-gradient"
+                      >
+                        <Wallet className="w-3 h-3 mr-1" />
+                        Pay Aggregator
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -394,6 +435,21 @@ const DistributorPortal: React.FC<DistributorPortalProps> = ({ user }) => {
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
       />
+
+      {paymentDetails && (
+        <MetaMaskPayment
+          isOpen={showPayment}
+          onClose={() => {
+            setShowPayment(false);
+            setPaymentDetails(null);
+          }}
+          recipientName={paymentDetails.recipientName}
+          amount={paymentDetails.amount}
+          description={paymentDetails.description}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentFailure={handlePaymentFailure}
+        />
+      )}
     </div>
   );
 };

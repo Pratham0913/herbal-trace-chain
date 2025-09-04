@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrCode, FileText, Upload, AlertTriangle, CheckCircle, Calendar } from 'lucide-react';
+import { QrCode, FileText, Upload, AlertTriangle, CheckCircle, Calendar, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import QRScanner from '@/components/QRScanner';
 import { QRData } from '@/components/QRGenerator';
 import { User } from '@/components/LoginSignup';
 import { useToast } from '@/hooks/use-toast';
+import MetaMaskPayment from '@/components/MetaMaskPayment';
 
 interface ProcessorPortalProps {
   user: User;
@@ -32,6 +33,12 @@ const ProcessorPortal: React.FC<ProcessorPortalProps> = ({ user }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [scannedData, setScannedData] = useState<QRData | null>(null);
   const [showUploadForm, setShowUploadForm] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    recipientName: string;
+    amount: number;
+    description: string;
+  } | null>(null);
   const { toast } = useToast();
 
   const [batches, setBatches] = useState<ProcessingBatch[]>([
@@ -175,6 +182,30 @@ const ProcessorPortal: React.FC<ProcessorPortalProps> = ({ user }) => {
   const missingCertificates = batches.filter(b => 
     !b.qualityCertificate && b.processingStage !== 'received'
   ).length;
+
+  const handlePaymentClick = (batch: ProcessingBatch) => {
+    setPaymentDetails({
+      recipientName: `Distributor - Processing Fee`,
+      amount: batch.quantity * 0.15, // 0.15 MATIC per kg
+      description: `Payment for processing ${batch.herbName} batch ${batch.id} (${batch.quantity} kg)`
+    });
+    setShowPayment(true);
+  };
+
+  const handlePaymentSuccess = (txHash: string) => {
+    toast({
+      title: "Payment Successful",
+      description: `Payment sent successfully. Transaction: ${txHash.slice(0, 10)}...`,
+    });
+  };
+
+  const handlePaymentFailure = (error: string) => {
+    toast({
+      title: "Payment Failed",
+      description: error,
+      variant: "destructive",
+    });
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -408,6 +439,16 @@ const ProcessorPortal: React.FC<ProcessorPortalProps> = ({ user }) => {
                   <Button size="sm" variant="outline">
                     View Details
                   </Button>
+                  {batch.processingStage === 'completed' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handlePaymentClick(batch)}
+                      className="herbal-gradient"
+                    >
+                      <Wallet className="w-3 h-3 mr-1" />
+                      Pay Distributor
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -459,6 +500,21 @@ const ProcessorPortal: React.FC<ProcessorPortalProps> = ({ user }) => {
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
       />
+
+      {paymentDetails && (
+        <MetaMaskPayment
+          isOpen={showPayment}
+          onClose={() => {
+            setShowPayment(false);
+            setPaymentDetails(null);
+          }}
+          recipientName={paymentDetails.recipientName}
+          amount={paymentDetails.amount}
+          description={paymentDetails.description}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentFailure={handlePaymentFailure}
+        />
+      )}
     </div>
   );
 };
