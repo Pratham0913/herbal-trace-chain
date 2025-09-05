@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import QRGenerator, { QRData } from '@/components/QRGenerator';
 import { User } from '@/components/LoginSignup';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { reverseGeocode } from '@/services/locationiq';
 
 interface FarmerPortalProps {
   user: User;
@@ -23,6 +25,11 @@ interface Batch {
   qrData: QRData;
   paymentStatus: 'pending' | 'paid';
   amount?: number;
+  photo_url?: string;
+  timestamp?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 const HERBS = [
@@ -36,6 +43,14 @@ const FarmerPortal: React.FC<FarmerPortalProps> = ({ user }) => {
   const [quantity, setQuantity] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [capturedLocation, setCapturedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+    address?: string;
+  } | null>(null);
+  
+  const { getCurrentLocation, isLoading: isLoadingLocation } = useGeolocation();
   const [batches, setBatches] = useState<Batch[]>([
     {
       id: 'HB-TUR001',
@@ -78,13 +93,46 @@ const FarmerPortal: React.FC<FarmerPortalProps> = ({ user }) => {
 
   const { toast } = useToast();
 
-  const captureImage = () => {
-    // Simulate camera capture
-    setCapturedImage('/placeholder-herb-image.jpg');
-    toast({
-      title: "Image Captured",
-      description: "Herb image captured successfully",
-    });
+  const captureImage = async () => {
+    try {
+      // Capture GPS coordinates
+      toast({
+        title: "Capturing Location",
+        description: "Getting GPS coordinates...",
+      });
+      
+      const locationData = await getCurrentLocation();
+      
+      // Get address from coordinates
+      const addressData = await reverseGeocode(locationData.latitude, locationData.longitude);
+      
+      const location = {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        timestamp: locationData.timestamp,
+        address: addressData.fullAddress
+      };
+      
+      setCapturedLocation(location);
+      
+      // Simulate camera capture
+      setCapturedImage('/placeholder-herb-image.jpg');
+      
+      toast({
+        title: "Image Captured with Location",
+        description: `Photo captured at ${addressData.village || addressData.city || 'current location'}`,
+      });
+    } catch (error) {
+      console.error('Failed to capture image with location:', error);
+      toast({
+        title: "Location Error", 
+        description: "Could not get location. Photo captured without GPS data.",
+        variant: "destructive",
+      });
+      
+      // Fallback: capture image without location
+      setCapturedImage('/placeholder-herb-image.jpg');
+    }
   };
 
   const handleUpload = () => {
@@ -101,22 +149,29 @@ const FarmerPortal: React.FC<FarmerPortalProps> = ({ user }) => {
 
     setTimeout(() => {
       const batchId = `HB-${selectedHerb.slice(0, 3).toUpperCase()}${String(batches.length + 1).padStart(3, '0')}`;
+      const timestamp = new Date().toISOString();
+      
       const newBatch: Batch = {
         id: batchId,
         herbName: selectedHerb,
         quantity: parseInt(quantity),
-        uploadDate: new Date().toISOString(),
+        uploadDate: timestamp,
         status: 'uploaded',
         paymentStatus: 'pending',
+        photo_url: capturedImage,
+        timestamp: capturedLocation?.timestamp || timestamp,
+        latitude: capturedLocation?.latitude,
+        longitude: capturedLocation?.longitude,
+        address: capturedLocation?.address,
         qrData: {
           batchId,
           farmerId: user.id,
           farmerPhone: user.phone || '',
           herbName: selectedHerb,
           quantity: parseInt(quantity),
-          timestamp: new Date().toISOString(),
+          timestamp: capturedLocation?.timestamp || timestamp,
           stage: 'Uploaded',
-          location: user.state
+          location: capturedLocation?.address || user.state
         }
       };
 
@@ -126,10 +181,11 @@ const FarmerPortal: React.FC<FarmerPortalProps> = ({ user }) => {
       setSelectedHerb('');
       setQuantity('');
       setCapturedImage(null);
+      setCapturedLocation(null);
 
       toast({
         title: "Batch Uploaded Successfully",
-        description: `QR code generated for batch ${batchId}`,
+        description: `QR code generated for batch ${batchId} with GPS location`,
       });
     }, 2000);
   };
@@ -261,21 +317,35 @@ const FarmerPortal: React.FC<FarmerPortalProps> = ({ user }) => {
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                 {capturedImage ? (
                   <div>
-                    <p className="text-success font-medium mb-2">✓ Image Captured</p>
-                    <Button onClick={captureImage} variant="outline" size="sm">
+                    <p className="text-success font-medium mb-2">✓ Image & Location Captured</p>
+                    {capturedLocation && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        📍 {capturedLocation.address?.slice(0, 60)}...
+                      </p>
+                    )}
+                    <Button 
+                      onClick={captureImage} 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isLoadingLocation}
+                    >
                       <Camera className="w-4 h-4 mr-2" />
-                      Retake Photo
+                      {isLoadingLocation ? 'Getting Location...' : 'Retake Photo'}
                     </Button>
                   </div>
                 ) : (
                   <div>
                     <Camera className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground mb-4">
-                      Take a live photo of your herbs
+                      Take a live photo with GPS location
                     </p>
-                    <Button onClick={captureImage} variant="outline">
+                    <Button 
+                      onClick={captureImage} 
+                      variant="outline"
+                      disabled={isLoadingLocation}
+                    >
                       <Camera className="w-4 h-4 mr-2" />
-                      Open Camera
+                      {isLoadingLocation ? 'Getting Location...' : 'Open Camera'}
                     </Button>
                   </div>
                 )}
