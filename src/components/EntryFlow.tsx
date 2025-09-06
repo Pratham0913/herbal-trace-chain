@@ -2,6 +2,7 @@ import React from 'react';
 import { Leaf, Users, QrCode, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import herbalChainLogo from '@/assets/herbalchain-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -22,8 +23,8 @@ const EntryFlow: React.FC<EntryFlowProps> = ({ onConsumerPortal, onSupplyChainJo
         <div className="text-center mb-12 animate-fade-in-scale">
           <div className="flex items-center justify-center mb-6">
             <img 
-              src="/lovable-uploads/d46cdfa9-b40a-4020-bf2c-16a3ab0f4839.png" 
-              alt="ROOTRA Logo" 
+              src={herbalChainLogo} 
+              alt="HerbalChain Logo" 
               className="w-20 h-20 mr-4"
             />
             <div>
