@@ -29,7 +29,7 @@ const EntryFlow: React.FC<EntryFlowProps> = ({ onConsumerPortal, onSupplyChainJo
             />
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-white">
-                {translate('app.name')}
+                ROOTRA
               </h1>
               <p className="text-white/80 text-lg mt-2">
                 Blockchain-Powered Herbal Supply Chain
