@@ -275,7 +275,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_system_notification: {
+        Args: {
+          batch_id?: string
+          notification_message: string
+          notification_title: string
+          notification_type: string
+          target_user_id: string
+          transaction_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,159 +10,105 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/components/LoginSignup';
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  timestamp: string;
-  read: boolean;
-  type: 'info' | 'success' | 'warning' | 'error';
+  created_at: string;
+  is_read: boolean;
+  type: string;
 }
 
 interface NotificationDropdownProps {
   userRole: UserRole;
 }
 
-const getNotificationsForRole = (role: UserRole): Notification[] => {
-  const baseTime = new Date();
-  
-  const roleNotifications: Record<UserRole, Notification[]> = {
-    farmer: [
-      {
-        id: '1',
-        title: 'Payment Received',
-        message: 'Payment of ₹15,000 received for batch HB-TUR001',
-        timestamp: new Date(baseTime.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'success'
-      },
-      {
-        id: '2',
-        title: 'Batch Collected',
-        message: 'Your turmeric batch has been collected by aggregator',
-        timestamp: new Date(baseTime.getTime() - 4 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        type: 'info'
-      },
-      {
-        id: '3',
-        title: 'Upload Reminder',
-        message: 'Remember to upload your harvest details',
-        timestamp: new Date(baseTime.getTime() - 24 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'warning'
-      }
-    ],
-    aggregator: [
-      {
-        id: '1',
-        title: 'New Batch Available',
-        message: '5 new batches available for collection in Karnataka',
-        timestamp: new Date(baseTime.getTime() - 1 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'info'
-      },
-      {
-        id: '2',
-        title: 'Quality Check Passed',
-        message: 'Batch HB-TUR001 passed quality inspection',
-        timestamp: new Date(baseTime.getTime() - 3 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        type: 'success'
-      }
-    ],
-    distributor: [
-      {
-        id: '1',
-        title: 'Shipment Update',
-        message: 'Delivery scheduled for tomorrow morning',
-        timestamp: new Date(baseTime.getTime() - 30 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'info'
-      },
-      {
-        id: '2',
-        title: 'Route Optimized',
-        message: 'New optimal route calculated for your deliveries',
-        timestamp: new Date(baseTime.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'success'
-      }
-    ],
-    processor: [
-      {
-        id: '1',
-        title: 'Certificate Expiring',
-        message: 'Quality certificate for batch HB-TUR001 expires in 3 days',
-        timestamp: new Date(baseTime.getTime() - 1 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'warning'
-      },
-      {
-        id: '2',
-        title: 'Processing Complete',
-        message: 'Turmeric powder processing completed successfully',
-        timestamp: new Date(baseTime.getTime() - 6 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        type: 'success'
-      }
-    ],
-    admin: [
-      {
-        id: '1',
-        title: 'Fraud Alert',
-        message: 'Duplicate QR code detected in Karnataka region',
-        timestamp: new Date(baseTime.getTime() - 15 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'error'
-      },
-      {
-        id: '2',
-        title: 'Approval Needed',
-        message: '3 batches require your approval',
-        timestamp: new Date(baseTime.getTime() - 1 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        type: 'warning'
-      },
-      {
-        id: '3',
-        title: 'System Update',
-        message: 'Platform maintenance scheduled for tonight',
-        timestamp: new Date(baseTime.getTime() - 4 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        type: 'info'
-      }
-    ]
-  };
-
-  return roleNotifications[role] || [];
-};
-
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ userRole }) => {
-  const [notifications, setNotifications] = useState(getNotificationsForRole(userRole));
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return;
+      }
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true }))
-    );
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const getTypeColor = (type: Notification['type']) => {
-    switch (type) {
+  const markAllAsRead = async () => {
+    try {
+      const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+      
+      if (unreadIds.length === 0) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', unreadIds);
+
+      if (error) {
+        console.error('Error marking all notifications as read:', error);
+        return;
+      }
+
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
       case 'success': return 'text-success';
       case 'warning': return 'text-warning';
       case 'error': return 'text-destructive';
-      default: return 'text-primary';
+      case 'transaction': return 'text-primary';
+      case 'info': 
+      default: return 'text-foreground';
     }
   };
 
@@ -214,7 +160,11 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ userRole })
         </div>
 
         <ScrollArea className="h-80">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="px-3 py-6 text-center text-muted-foreground">
+              Loading notifications...
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="px-3 py-6 text-center text-muted-foreground">
               No notifications
             </div>
@@ -222,7 +172,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ userRole })
             notifications.map((notification, index) => (
               <div key={notification.id}>
                 <DropdownMenuItem
-                  className={`px-3 py-3 cursor-pointer ${!notification.read ? 'bg-accent/50' : ''}`}
+                  className={`px-3 py-3 cursor-pointer ${!notification.is_read ? 'bg-accent/50' : ''}`}
                   onSelect={() => markAsRead(notification.id)}
                 >
                   <div className="flex-1 min-w-0">
@@ -230,7 +180,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ userRole })
                       <h4 className={`text-sm font-medium ${getTypeColor(notification.type)}`}>
                         {notification.title}
                       </h4>
-                      {!notification.read && (
+                      {!notification.is_read && (
                         <div className="w-2 h-2 bg-primary rounded-full mt-1 ml-2 flex-shrink-0" />
                       )}
                     </div>
@@ -238,7 +188,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ userRole })
                       {notification.message}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatTimestamp(notification.timestamp)}
+                      {formatTimestamp(notification.created_at)}
                     </p>
                   </div>
                 </DropdownMenuItem>
