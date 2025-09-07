@@ -1,11 +1,11 @@
 import React from 'react';
-import { Leaf, Users, QrCode, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { QrCode, Users, Leaf, Shield } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import ThemeToggle from '@/components/ThemeToggle';
+import Navbar from '@/components/Navbar';
+import AyurvedicBackground from '@/components/AyurvedicBackground';
 
 interface EntryFlowProps {
   onConsumerPortal: () => void;
@@ -17,118 +17,99 @@ const EntryFlow: React.FC<EntryFlowProps> = ({ onConsumerPortal, onSupplyChainJo
   const { theme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-12 animate-fade-in-scale">
-          <div className="flex items-center justify-center mb-6">
-            <img 
-              src={herbalChainLogo} 
-              alt="HerbalChain Logo" 
-              className="w-20 h-20 mr-4"
-            />
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white">
-                ROOTRA
-              </h1>
-              <p className="text-white/80 text-lg mt-2">
-                Blockchain-Powered Herbal Supply Chain
-              </p>
+    <div className="min-h-screen relative">
+      <AyurvedicBackground />
+      <Navbar title="Blockchain-Powered Traceability" />
+      
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+              {translate('home.welcome')}
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              {translate('home.subtitle')}
+            </p>
+          </div>
+
+          {/* Entry Options */}
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="bg-background/95 backdrop-blur-sm border shadow-herbal-lg hover:shadow-herbal-xl transition-all cursor-pointer group"
+                  onClick={onConsumerPortal}>
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <QrCode className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle className="text-2xl text-foreground">
+                  {translate('home.consumer_portal')}
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  {translate('home.consumer_description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full herbal-gradient text-primary-foreground font-semibold py-3">
+                  {translate('home.scan_qr')}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-background/95 backdrop-blur-sm border shadow-herbal-lg hover:shadow-herbal-xl transition-all cursor-pointer group"
+                  onClick={onSupplyChainJoin}>
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4 group-hover:bg-secondary/80 transition-colors">
+                  <Users className="w-8 h-8 text-secondary-foreground" />
+                </div>
+                <CardTitle className="text-2xl text-foreground">
+                  {translate('home.supply_chain')}
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  {translate('home.supply_chain_description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold py-3">
+                  {translate('home.join_network')}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Features Section */}
+          <div className="grid md:grid-cols-3 gap-8 mt-16">
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <Leaf className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Natural & Organic</h3>
+              <p className="text-muted-foreground">Verify the authenticity and organic nature of herbal products</p>
+            </div>
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Blockchain Security</h3>
+              <p className="text-muted-foreground">Immutable records ensure product integrity and trust</p>
+            </div>
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                <QrCode className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Easy Tracking</h3>
+              <p className="text-muted-foreground">Simple QR code scanning for complete supply chain visibility</p>
             </div>
           </div>
-          
-          <div className="absolute top-6 right-6">
-            <ThemeToggle />
-          </div>
-        </div>
 
-        {/* Entry Options */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Consumer Option */}
-          <Card className="portal-card bg-white/95 dark:bg-card/95 backdrop-blur-sm hover:bg-white dark:hover:bg-card/100 transition-herbal group">
-            <CardContent className="p-8 text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center group-hover:scale-110 transition-herbal">
-                  <QrCode className="w-10 h-10 text-white" />
-                </div>
-              </div>
-              
-              <h2 className="text-2xl font-bold mb-4 text-foreground">
-                {translate('entry.consumer')}
-              </h2>
-              
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Scan QR codes to verify herbal products and view complete traceability from farm to shelf.
-              </p>
-              
-              <div className="mb-6 space-y-2">
-                <div className="flex items-center justify-center text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4 mr-2 text-success" />
-                  No signup required
-                </div>
-                <div className="flex items-center justify-center text-sm text-muted-foreground">
-                  <Leaf className="w-4 h-4 mr-2 text-success" />
-                  Instant product verification
-                </div>
-              </div>
-              
-              <Button 
-                onClick={onConsumerPortal}
-                size="lg"
-                className="w-full herbal-gradient hover:bg-primary/90 text-white font-semibold"
-              >
-                Start Scanning
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Supply Chain Option */}
-          <Card className="portal-card bg-white/95 dark:bg-card/95 backdrop-blur-sm hover:bg-white dark:hover:bg-card/100 transition-herbal group">
-            <CardContent className="p-8 text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center group-hover:scale-110 transition-herbal">
-                  <Users className="w-10 h-10 text-white" />
-                </div>
-              </div>
-              
-              <h2 className="text-2xl font-bold mb-4 text-foreground">
-                {translate('entry.supply')}
-              </h2>
-              
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Join as a Farmer, Aggregator, Distributor, Processor, or Admin to manage the herbal supply chain.
-              </p>
-              
-              <div className="mb-6 space-y-2">
-                <div className="flex items-center justify-center text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4 mr-2 text-success" />
-                  Secure OTP authentication
-                </div>
-                <div className="flex items-center justify-center text-sm text-muted-foreground">
-                  <Leaf className="w-4 h-4 mr-2 text-success" />
-                  Role-based dashboard
-                </div>
-              </div>
-              
-              <Button 
-                onClick={onSupplyChainJoin}
-                variant="outline"
-                size="lg"
-                className="w-full border-white/20 text-foreground hover:bg-accent/20 font-semibold"
-              >
-                Login / Signup
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Footer */}
+          <footer className="text-center mt-16 pt-8 border-t border-border">
+            <p className="text-muted-foreground text-sm">
+              Powered by blockchain technology for transparent and trustworthy herbal supply chains
+            </p>
+          </footer>
         </div>
-
-        {/* Features */}
-        <div className="mt-16 text-center text-white/80">
-          <p className="text-sm">
-            Powered by blockchain technology for complete transparency and trust
-          </p>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

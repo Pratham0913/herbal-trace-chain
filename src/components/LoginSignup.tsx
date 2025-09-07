@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { ArrowLeft, Mail, Phone, MapPin, Globe } from 'lucide-react';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
-import ThemeToggle from '@/components/ThemeToggle';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import Navbar from '@/components/Navbar';
+import AyurvedicBackground from '@/components/AyurvedicBackground';
 
 export type UserRole = 'farmer' | 'aggregator' | 'distributor' | 'processor' | 'admin';
 
@@ -44,80 +47,228 @@ const ROLES: { value: UserRole; label: string; description: string }[] = [
 
 const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
   const [step, setStep] = useState<'contact' | 'otp' | 'details'>('contact');
-  const [contactMethod, setContactMethod] = useState<'phone' | 'email'>('phone');
+  const [contactMethod, setContactMethod] = useState<'phone' | 'email'>('email');
   const [contactValue, setContactValue] = useState('');
   const [otp, setOtp] = useState('');
   const [selectedState, setSelectedState] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
+  const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   const { translate, currentLanguage, setLanguage } = useLanguage();
 
   const handleSendOtp = async () => {
+    if (!contactValue.trim()) {
+      setAuthError('Please enter your contact information');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate OTP sending
-    setTimeout(() => {
-      setIsLoading(false);
+    setAuthError(null);
+
+    try {
+      if (contactMethod === 'email') {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: contactValue,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "OTP Sent",
+          description: `Check your email ${contactValue} for the verification code`,
+        });
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: contactValue,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "OTP Sent",
+          description: `Check your phone ${contactValue} for the verification code`,
+        });
+      }
+      
       setStep('otp');
-    }, 1500);
+    } catch (error: any) {
+      console.error('OTP send error:', error);
+      setAuthError(error.message || 'Failed to send OTP. Please try again.');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to send OTP. Please try again.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      setAuthError('Please enter the complete 6-digit OTP');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate OTP verification
-    setTimeout(() => {
+    setAuthError(null);
+
+    try {
+      let verifyData;
+      if (contactMethod === 'email') {
+        verifyData = await supabase.auth.verifyOtp({
+          email: contactValue,
+          token: otp,
+          type: 'email'
+        });
+      } else {
+        verifyData = await supabase.auth.verifyOtp({
+          phone: contactValue,
+          token: otp,
+          type: 'sms'
+        });
+      }
+
+      const { data, error } = verifyData;
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Check if user profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+
+        if (profile) {
+          // User already has a profile, complete login
+          const user: User = {
+            id: data.user.id,
+            [contactMethod]: contactValue,
+            role: profile.role as UserRole,
+            state: profile.state,
+            language: profile.preferred_language,
+            isVerified: true,
+          };
+          onComplete(user);
+        } else {
+          // New user, go to details step
+          setStep('details');
+        }
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      setAuthError(error.message || 'Invalid OTP. Please try again.');
+      toast({
+        title: "Error",
+        description: error.message || 'Invalid OTP. Please try again.',
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      setStep('details');
-    }, 1500);
+    }
   };
 
-  const handleComplete = () => {
-    if (!selectedRole || !selectedState) return;
-    
-    const user: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      [contactMethod]: contactValue,
-      role: selectedRole,
-      state: selectedState,
-      language: currentLanguage.code,
-      isVerified: true,
-    };
+  const handleComplete = async () => {
+    if (!selectedRole || !selectedState || !fullName.trim()) {
+      setAuthError('Please fill in all required fields');
+      return;
+    }
 
-    onComplete(user);
+    setIsLoading(true);
+    setAuthError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error('No authenticated user found');
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          full_name: fullName,
+          phone: contactMethod === 'phone' ? contactValue : null,
+          role: selectedRole,
+          state: selectedState,
+          preferred_language: currentLanguage.code,
+          is_verified: true,
+        });
+
+      if (profileError) throw profileError;
+
+      const completedUser: User = {
+        id: user.id,
+        [contactMethod]: contactValue,
+        role: selectedRole,
+        state: selectedState,
+        language: currentLanguage.code,
+        isVerified: true,
+      };
+
+      toast({
+        title: "Welcome to HerbalChain!",
+        description: "Your account has been created successfully.",
+      });
+
+      onComplete(completedUser);
+    } catch (error: any) {
+      console.error('Profile creation error:', error);
+      setAuthError(error.message || 'Failed to create profile. Please try again.');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to create profile. Please try again.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onBack}
-              className="text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            
-            <img 
-              src={herbalChainLogo} 
-              alt="HerbalChain Logo" 
-              className="w-12 h-12"
-            />
-            
-            <ThemeToggle />
+    <div className="min-h-screen relative">
+      <AyurvedicBackground />
+      <Navbar 
+        showBackButton 
+        onBack={onBack} 
+        title="Authentication"
+      />
+      
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {step === 'contact' ? 'Welcome to HerbalChain' : 
+               step === 'otp' ? 'Verify Your Identity' : 
+               'Complete Your Profile'}
+            </h1>
+            <p className="text-muted-foreground">
+              {step === 'contact' ? 'Enter your contact details to get started' :
+               step === 'otp' ? 'We sent you a verification code' :
+               'Tell us about yourself to join the supply chain'}
+            </p>
           </div>
-          
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {translate('login.title')}
-          </h1>
-        </div>
 
-        <Card className="bg-white/95 dark:bg-card/95 backdrop-blur-sm">
-          <CardContent className="p-6">
-            {step === 'contact' && (
+          <Card className="bg-background/95 backdrop-blur-sm border shadow-herbal-lg">
+            <CardContent className="p-6">
+              {authError && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                  {authError}
+                </div>
+              )}
+              
+              {step === 'contact' && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Contact Method</Label>
@@ -149,7 +300,10 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
                     type={contactMethod === 'phone' ? 'tel' : 'email'}
                     placeholder={contactMethod === 'phone' ? '+91 12345 67890' : 'your@email.com'}
                     value={contactValue}
-                    onChange={(e) => setContactValue(e.target.value)}
+                    onChange={(e) => {
+                      setContactValue(e.target.value);
+                      setAuthError(null);
+                    }}
                   />
                 </div>
 
@@ -163,55 +317,92 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
               </div>
             )}
 
-            {step === 'otp' && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Enter the OTP sent to {contactValue}
-                  </p>
-                </div>
+              {step === 'otp' && (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Enter the 6-digit code sent to {contactValue}
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>OTP</Label>
-                  <Input
-                    type="text"
-                    placeholder="Enter 6-digit OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label>Verification Code</Label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={otp}
+                        onChange={(value) => {
+                          setOtp(value);
+                          setAuthError(null);
+                        }}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
 
-                <Button
-                  onClick={handleVerifyOtp}
-                  disabled={otp.length !== 6 || isLoading}
-                  className="w-full herbal-gradient"
-                >
-                  {isLoading ? 'Verifying...' : 'Verify OTP'}
-                </Button>
-              </div>
-            )}
-
-            {step === 'details' && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    State
-                  </Label>
-                  <Select value={selectedState} onValueChange={setSelectedState}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDIAN_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep('contact')}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleVerifyOtp}
+                      disabled={otp.length !== 6 || isLoading}
+                      className="flex-1 herbal-gradient"
+                    >
+                      {isLoading ? 'Verifying...' : 'Verify'}
+                    </Button>
+                  </div>
                 </div>
+              )}
+
+              {step === 'details' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
+                    <Input
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={fullName}
+                      onChange={(e) => {
+                        setFullName(e.target.value);
+                        setAuthError(null);
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      State
+                    </Label>
+                    <Select value={selectedState} onValueChange={(value) => {
+                      setSelectedState(value);
+                      setAuthError(null);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_STATES.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
@@ -238,36 +429,40 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Role in Supply Chain</Label>
-                  <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          <div className="text-left">
-                            <div className="font-medium">{role.label}</div>
-                            <div className="text-xs text-muted-foreground">{role.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label>Role in Supply Chain</Label>
+                    <Select value={selectedRole} onValueChange={(value) => {
+                      setSelectedRole(value as UserRole);
+                      setAuthError(null);
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            <div className="text-left">
+                              <div className="font-medium">{role.label}</div>
+                              <div className="text-xs text-muted-foreground">{role.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <Button
-                  onClick={handleComplete}
-                  disabled={!selectedRole || !selectedState}
-                  className="w-full herbal-gradient"
-                >
-                  Complete Setup
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <Button
+                    onClick={handleComplete}
+                    disabled={!selectedRole || !selectedState || !fullName.trim() || isLoading}
+                    className="w-full herbal-gradient"
+                  >
+                    {isLoading ? 'Creating Profile...' : 'Complete Setup'}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
