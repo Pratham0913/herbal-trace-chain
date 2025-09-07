@@ -70,10 +70,7 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
     try {
       if (contactMethod === 'email') {
         const { error } = await supabase.auth.signInWithOtp({
-          email: contactValue,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`
-          }
+          email: contactValue
         });
         
         if (error) throw error;
@@ -218,7 +215,7 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
       };
 
       toast({
-        title: "Welcome to HerbalChain!",
+        title: "Welcome to Rootra!",
         description: "Your account has been created successfully.",
       });
 
@@ -249,7 +246,7 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ onBack, onComplete }) => {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {step === 'contact' ? 'Welcome to HerbalChain' : 
+              {step === 'contact' ? 'Welcome to Rootra' : 
                step === 'otp' ? 'Verify Your Identity' : 
                'Complete Your Profile'}
             </h1>

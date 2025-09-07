@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
 import ThemeToggle from '@/components/ThemeToggle';
 
 interface NavbarProps {
@@ -37,13 +36,13 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Logo */}
             <div className="flex items-center space-x-3">
               <img 
-                src={herbalChainLogo} 
-                alt="HerbalChain Logo" 
+                src="/lovable-uploads/fcdc47b6-2469-4d53-9a75-20f63f9e223d.png" 
+                alt="Rootra Logo" 
                 className="w-10 h-10 rounded-lg"
               />
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-foreground">
-                  HerbalChain
+                  Rootra
                 </h1>
                 {title && (
                   <p className="text-sm text-muted-foreground">

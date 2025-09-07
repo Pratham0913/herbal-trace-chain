@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SplashScreenProps {
@@ -28,8 +28,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       <div className={`text-center ${isVisible ? 'animate-fade-in-scale' : 'animate-fade-out-scale'}`}>
         <div className="mb-8 flex justify-center">
           <img 
-            src={herbalChainLogo} 
-            alt="HerbalChain Logo" 
+            src="/lovable-uploads/fcdc47b6-2469-4d53-9a75-20f63f9e223d.png" 
+            alt="Rootra Logo"
             className="w-32 h-32 animate-bounce-gentle"
           />
         </div>

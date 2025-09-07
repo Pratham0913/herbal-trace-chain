@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* HerbalChain Design System - Natural, professional theme with herbal green palette */
+/* Rootra Design System - Natural, professional theme with herbal green palette */
 
 @layer base {
   :root {
@@ -44,7 +44,7 @@
 
     --radius: 0.75rem;
 
-    /* HerbalChain Brand Colors */
+    /* Rootra Brand Colors */
     --herbal-green: 142 76% 36%;
     --herbal-light: 142 25% 95%;
     --earth-brown: 25 35% 45%;
@@ -147,7 +147,7 @@
 }
 
 @layer components {
-  /* HerbalChain Custom Components */
+  /* Rootra Custom Components */
   .herbal-gradient {
     background: var(--gradient-primary);
   }

@@ -28,12 +28,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 // Basic translations for demo - in real app this would come from translation files
 const translations: Record<string, Record<string, string>> = {
   en: {
-    'app.name': 'HerbalChain',
+    'app.name': 'Rootra',
     'splash.quote': 'From Roots to Remedies → Verified with Blockchain',
     'entry.consumer': 'Continue as Consumer',
     'entry.supply': 'Join Supply Chain',
     'scan.qr': 'Scan QR Code',
-    'login.title': 'Welcome to HerbalChain',
+    'login.title': 'Welcome to Rootra',
     'notifications': 'Notifications',
     'profile': 'Profile Settings',
     'logout': 'Logout',
@@ -68,7 +68,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   const setLanguage = (language: Language) => {
     setCurrentLanguage(language);
-    localStorage.setItem('herbalchain-language', language.code);
+    localStorage.setItem('rootra-language', language.code);
   };
 
   const translate = (key: string): string => {
@@ -76,7 +76,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   };
 
   React.useEffect(() => {
-    const savedLanguage = localStorage.getItem('herbalchain-language');
+    const savedLanguage = localStorage.getItem('rootra-language');
     if (savedLanguage) {
       const language = SUPPORTED_LANGUAGES.find(lang => lang.code === savedLanguage);
       if (language) {

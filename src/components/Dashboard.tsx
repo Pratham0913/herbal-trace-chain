@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
+
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -49,8 +49,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, children, onLogout, onUserU
             {/* Logo */}
             <div className="flex items-center">
               <img 
-                src={herbalChainLogo} 
-                alt="HerbalChain Logo" 
+                src="/lovable-uploads/fcdc47b6-2469-4d53-9a75-20f63f9e223d.png" 
+                alt="Rootra Logo"
                 className="w-8 h-8 mr-3"
               />
               <h1 className="text-xl font-bold text-foreground">

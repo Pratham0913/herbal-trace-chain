@@ -17,7 +17,7 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your HerbalChain assistant. I can help you with questions about using the platform, understanding supply chain processes, or troubleshooting issues. How can I assist you today?',
+      text: 'Hello! I\'m your Rootra assistant. I can help you with questions about using the platform, understanding supply chain processes, or troubleshooting issues. How can I assist you today?',
       sender: 'bot',
       timestamp: new Date()
     }
@@ -33,8 +33,8 @@ const Chatbot: React.FC = () => {
     'fraud alert': 'If you notice suspicious activity: 1) Report immediately through the notification system, 2) Provide batch ID and location details, 3) Admin team will investigate within 24 hours. Common fraud indicators include duplicate QR codes or invalid certificates.',
     'dark mode': 'You can toggle dark mode using the sun/moon icon in the top navigation bar. Your preference is saved automatically.',
     'language change': 'To change language: 1) Click the hamburger menu (3 lines), 2) Select "Profile Settings", 3) Choose your preferred language from the dropdown. We support Hindi, Tamil, Telugu, Kannada, Bengali, and more.',
-    'roles': 'HerbalChain has 5 roles: Farmer (grows herbs), Aggregator (collects from farmers), Distributor (transports batches), Processor (processes and certifies), Admin (manages system). Each role has specific permissions and responsibilities.',
-    'blockchain': 'HerbalChain uses blockchain to ensure transparency and immutability. Every transaction is recorded on the blockchain, creating an unchangeable record of the herb\'s journey from farm to consumer.',
+    'roles': 'Rootra has 5 roles: Farmer (grows herbs), Aggregator (collects from farmers), Distributor (transports batches), Processor (processes and certifies), Admin (manages system). Each role has specific permissions and responsibilities.',
+    'blockchain': 'Rootra uses blockchain to ensure transparency and immutability. Every transaction is recorded on the blockchain, creating an unchangeable record of the herb\'s journey from farm to consumer.',
     'help': 'I can help with: QR code scanning, batch uploads, payment queries, quality certificates, fraud reporting, app navigation, role explanations, and technical support. Just ask me anything!'
   };
 
@@ -50,11 +50,11 @@ const Chatbot: React.FC = () => {
 
     // Default responses for common patterns
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return 'Hello! Welcome to HerbalChain. I\'m here to help you navigate the platform and answer any questions you have about the herbal supply chain process.';
+      return 'Hello! Welcome to Rootra. I\'m here to help you navigate the platform and answer any questions you have about the herbal supply chain process.';
     }
     
     if (lowerMessage.includes('thank')) {
-      return 'You\'re welcome! Is there anything else I can help you with regarding HerbalChain?';
+      return 'You\'re welcome! Is there anything else I can help you with regarding Rootra?';
     }
 
     if (lowerMessage.includes('problem') || lowerMessage.includes('issue') || lowerMessage.includes('error')) {
@@ -122,7 +122,7 @@ const Chatbot: React.FC = () => {
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">HerbalChain Assistant</h3>
+                <h3 className="font-semibold text-sm">Rootra Assistant</h3>
                 <p className="text-xs text-muted-foreground">Always here to help</p>
               </div>
             </div>

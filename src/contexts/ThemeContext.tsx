@@ -25,7 +25,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('dark'); // Default to dark mode
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('herbalchain-theme') as Theme;
+    const savedTheme = localStorage.getItem('rootra-theme') as Theme;
     if (savedTheme) {
       setTheme(savedTheme);
     }
@@ -35,7 +35,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('herbalchain-theme', theme);
+    localStorage.setItem('rootra-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

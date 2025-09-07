@@ -3,7 +3,7 @@ import { QrCode, ArrowLeft, Leaf, Shield, Clock, MapPin, User, Phone } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import herbalChainLogo from '@/assets/herbalchain-logo.png';
+
 import QRScanner from '@/components/QRScanner';
 import { QRData } from '@/components/QRGenerator';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -111,8 +111,8 @@ const ConsumerPortal: React.FC<ConsumerPortalProps> = ({ onBack }) => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <img 
-                src={herbalChainLogo} 
-                alt="HerbalChain Logo" 
+                src="/lovable-uploads/fcdc47b6-2469-4d53-9a75-20f63f9e223d.png" 
+                alt="Rootra Logo"
                 className="w-8 h-8 mr-3"
               />
               <h1 className="text-xl font-bold text-white">

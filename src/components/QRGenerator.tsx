@@ -40,7 +40,7 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({ data, size = 200 }) => {
         width: size,
         margin: 2,
         color: {
-          dark: '#22c55e', // HerbalChain green
+          dark: '#22c55e', // Rootra green
           light: '#ffffff',
         },
       });
@@ -53,7 +53,7 @@ const QRGenerator: React.FC<QRGeneratorProps> = ({ data, size = 200 }) => {
     if (!canvasRef.current) return;
 
     const link = document.createElement('a');
-    link.download = `HerbalChain-${data.batchId}.png`;
+    link.download = `Rootra-${data.batchId}.png`;
     link.href = canvasRef.current.toDataURL();
     link.click();
     
